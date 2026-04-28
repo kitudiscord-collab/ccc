@@ -285,8 +285,8 @@ client.on('messageCreate', async (message) => {
             
             logs.forEach(log => {
                 if (log.timestamp.startsWith(todayDate)) {
-                    if (log.type === 'INCOMING') incomingNumbers.add(log.secondParty || log.number || '📞 Call Log Entry');
-                    if (log.type === 'OUTGOING') outgoingNumbers.add(log.secondParty || log.number || '📞 Call Log Entry');
+                    if (log.type === 'INCOMING') incomingNumbers.add(`${log.timestamp.split(' ')[1]} | ${log.duration}`);
+                    if (log.type === 'OUTGOING') outgoingNumbers.add(`${log.timestamp.split(' ')[1]} | ${log.duration}`);
                 }
             });
         }

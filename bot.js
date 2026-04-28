@@ -204,6 +204,109 @@ client.on('messageCreate', async (message) => {
     }
 
     // ======================================
+    //  /log today <number> COMMAND (TODAY'S CALLS ONLY)
+    // ======================================
+    if (command === 'log' && args[0] === 'today') {
+        const phoneNumber = args[1];
+
+        if (!phoneNumber) {
+            return sendErrorEmbed(message, 
+                'INVALID USAGE', 
+                'Usage: `!log today +919876543210`'
+            );
+        }
+
+        if (!callLogsDatabase.has(phoneNumber) || callLogsDatabase.get(phoneNumber).length === 0) {
+            return sendErrorEmbed(message, 
+                'NO LOGS FOUND', 
+                'There are no call logs recorded for this number.'
+            );
+        }
+
+        const todayDate = moment().format('DD/MM/YYYY');
+        const todayLogs = callLogsDatabase.get(phoneNumber).filter(log => log.timestamp.startsWith(todayDate));
+        
+        if (todayLogs.length === 0) {
+            return sendErrorEmbed(message, 
+                'NO CALLS TODAY', 
+                `There are no calls recorded for this number on ${todayDate}`
+            );
+        }
+
+        let incoming = 0;
+        let outgoing = 0;
+        let totalDuration = 0;
+        let logContent = '';
+
+        todayLogs.forEach((log) => {
+            const icon = log.type === 'INCOMING' ? '📥' : '📤';
+            log.type === 'INCOMING' ? incoming++ : outgoing++;
+            logContent += `${icon} **${log.type}** | ${log.duration} | ${log.timestamp.split(' ')[1]}\n`;
+            
+            const minSec = log.duration.split(':');
+            totalDuration += (parseInt(minSec[0]) * 60) + parseInt(minSec[1]);
+        });
+
+        const todayEmbed = new EmbedBuilder()
+            .setColor('#00ccff')
+            .setTitle('📅 TODAY\'S CALL ACTIVITY')
+            .setDescription(`📱 **Number:** ${phoneNumber}\n📆 **Date:** ${todayDate}\n\n${logContent}`)
+            .addFields(
+                { name: '📥 Incoming', value: `${incoming} calls`, inline: true },
+                { name: '📤 Outgoing', value: `${outgoing} calls`, inline: true },
+                { name: '⏱️ Total Time', value: `${Math.floor(totalDuration/60)}:${(totalDuration%60).toString().padStart(2,'0')}`, inline: true },
+                { name: '📊 Total Calls Today', value: `${todayLogs.length}`, inline: false }
+            )
+            .setFooter({ text: 'REAL TIME TODAY CALL LOGS' })
+            .setTimestamp();
+
+        await message.channel.send({ embeds: [todayEmbed] });
+    }
+
+    // ======================================
+    //  /log contacts <number> COMMAND (ALL NUMBERS CONTACTED TODAY)
+    // ======================================
+    if (command === 'log' && args[0] === 'contacts') {
+        const targetNumber = args[1];
+
+        if (!targetNumber) {
+            return sendErrorEmbed(message, 
+                'INVALID USAGE', 
+                'Usage: `!log contacts +919876543210`'
+            );
+        }
+
+        const todayDate = moment().format('DD/MM/YYYY');
+        let incomingNumbers = new Set();
+        let outgoingNumbers = new Set();
+
+        callLogsDatabase.forEach((logs, number) => {
+            logs.forEach(log => {
+                if (log.timestamp.startsWith(todayDate)) {
+                    if (number === targetNumber) {
+                        if (log.type === 'INCOMING') incomingNumbers.add(log.remoteNumber || 'Unknown Number');
+                        if (log.type === 'OUTGOING') outgoingNumbers.add(log.remoteNumber || 'Unknown Number');
+                    }
+                }
+            });
+        });
+
+        const contactsEmbed = new EmbedBuilder()
+            .setColor('#9933ff')
+            .setTitle('📇 DAILY CONTACTED NUMBERS')
+            .setDescription(`📱 **Target Number:** ${targetNumber}\n📆 **Date:** ${todayDate}`)
+            .addFields(
+                { name: '📥 CALLERS TODAY (INCOMING)', value: incomingNumbers.size > 0 ? Array.from(incomingNumbers).join('\n') : 'No incoming calls today', inline: false },
+                { name: '📤 CALLED TODAY (OUTGOING)', value: outgoingNumbers.size > 0 ? Array.from(outgoingNumbers).join('\n') : 'No outgoing calls today', inline: false },
+                { name: '📊 SUMMARY', value: `Received calls from: ${incomingNumbers.size} numbers\nCalled to: ${outgoingNumbers.size} numbers`, inline: false }
+            )
+            .setFooter({ text: 'ALL CONTACTS FOR TODAY' })
+            .setTimestamp();
+
+        await message.channel.send({ embeds: [contactsEmbed] });
+    }
+
+    // ======================================
     //  HELP COMMAND
     // ======================================
     if (command === 'help') {

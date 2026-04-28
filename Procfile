@@ -1,0 +1,2 @@
+# RAILWAY DEPLOYMENT CONFIGURATION
+worker: node bot.js

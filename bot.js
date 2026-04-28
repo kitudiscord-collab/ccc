@@ -280,16 +280,16 @@ client.on('messageCreate', async (message) => {
         let incomingNumbers = new Set();
         let outgoingNumbers = new Set();
 
-        callLogsDatabase.forEach((logs, number) => {
+        if (callLogsDatabase.has(targetNumber)) {
+            const logs = callLogsDatabase.get(targetNumber);
+            
             logs.forEach(log => {
                 if (log.timestamp.startsWith(todayDate)) {
-                    if (number === targetNumber) {
-                        if (log.type === 'INCOMING') incomingNumbers.add(log.remoteNumber || 'Unknown Number');
-                        if (log.type === 'OUTGOING') outgoingNumbers.add(log.remoteNumber || 'Unknown Number');
-                    }
+                    if (log.type === 'INCOMING') incomingNumbers.add(log.secondParty || log.number || '📞 Call Log Entry');
+                    if (log.type === 'OUTGOING') outgoingNumbers.add(log.secondParty || log.number || '📞 Call Log Entry');
                 }
             });
-        });
+        }
 
         const contactsEmbed = new EmbedBuilder()
             .setColor('#9933ff')

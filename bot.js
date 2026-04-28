@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const chalk = require('chalk');
 const moment = require('moment');
-const phoneUtil = require('libphonenumber-js');
+const { parsePhoneNumber } = require('libphonenumber-js');
 
 const client = new Client({
     intents: [
@@ -67,7 +67,7 @@ client.on('messageCreate', async (message) => {
         const phoneNumber = args[0];
         
         try {
-            const parsedNumber = phoneUtil.parsePhoneNumber(phoneNumber);
+            const parsedNumber = parsePhoneNumber(phoneNumber);
             
             if (!parsedNumber.isValid()) {
                 return sendErrorEmbed(message, 
